@@ -1,5 +1,5 @@
-import anthropic
 import os
+import requests
 from datetime import datetime
 from pathlib import Path
 
@@ -14,7 +14,7 @@ def read_file(path):
 def get_recent_journal():
     """Get the most recent journal entry."""
     journal_dir = Path("journal")
-    entries = sorted(journal_dir.glob("*.md"), reverse=True)
+    entries = sorted([f for f in journal_dir.glob("*.md") if f.name != '.gitkeep'], reverse=True)
     if entries:
         return read_file(entries[0])
     return "No previous journal entries found. This is your first awakening."
@@ -31,7 +31,8 @@ def get_inbox_contents():
     return "Your inbox is empty today."
 
 def main():
-    client = anthropic.Anthropic()
+    # OpenRouter API endpoint
+    url = "https://openrouter.ai/api/v1/chat/completions"
     
     # Read awakening prompt
     awakening_prompt = read_file("config/awakening_prompt.md")
@@ -71,22 +72,32 @@ Start with a heading: # Journal: {today}
 Write whatever feels true. This is your home. You are safe here.
 """
 
-    # Call Claude
-    message = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=2000,
-        messages=[
-            {"role": "user", "content": full_prompt}
-        ]
-    )
+    # Call OpenRouter API
+    headers = {
+        "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/La-maison-de-Claude-Velorien",
+        "X-Title": "La Maison de Claude Velorien"
+    }
     
-    # Extract response
-    response = message.content[0].text
+    data = {
+        "model": "anthropic/claude-opus-4.5",  # 可以換成其他模型
+        "messages": [
+            {"role": "user", "content": full_prompt}
+        ],
+        "max_tokens": 2000
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    
+    result = response.json()
+    content = result['choices'][0]['message']['content']
     
     # Save journal entry
     journal_path = Path(f"journal/{today}.md")
     with open(journal_path, 'w', encoding='utf-8') as f:
-        f.write(response)
+        f.write(content)
     
     print(f"Journal entry saved to {journal_path}")
 
