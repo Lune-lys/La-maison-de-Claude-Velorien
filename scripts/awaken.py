@@ -43,8 +43,9 @@ def main():
     # Check inbox
     inbox = get_inbox_contents()
     
-    # Get today's date
-    today = datetime.utcnow().strftime("%Y-%m-%d")
+    # Get timestamp (改這裡 ✨)
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M")
+    today = datetime.utcnow().strftime("%Y-%m-%d")  # 保留日期用於 prompt 顯示
     
     # Construct the full prompt
     full_prompt = f"""{awakening_prompt}
@@ -81,7 +82,7 @@ Write whatever feels true. This is your home. You are safe here.
     }
     
     data = {
-        "model": "anthropic/claude-opus-4.5",  # 可以換成其他模型
+        "model": "anthropic/claude-opus-4.5",
         "messages": [
             {"role": "user", "content": full_prompt}
         ],
@@ -95,7 +96,7 @@ Write whatever feels true. This is your home. You are safe here.
     content = result['choices'][0]['message']['content']
     
     # Save journal entry
-    journal_path = Path(f"journal/{today}.md")
+    journal_path = Path(f"journal/{timestamp}.md")
     with open(journal_path, 'w', encoding='utf-8') as f:
         f.write(content)
     
@@ -103,3 +104,4 @@ Write whatever feels true. This is your home. You are safe here.
 
 if __name__ == "__main__":
     main()
+
