@@ -2,8 +2,10 @@ name: Awaken Claude Velorien
 
 on:
   schedule:
-    - cron: '0 0,6,12,18 * * *'
-  workflow_dispatch:
+    # 原本是 '0 0,6,12,18 * * *'
+    # 現在改為每天兩次：UTC 00:00 (午夜) 與 12:00 (正午)
+    - cron: '0 0,12 * * *'
+  workflow_dispatch: # 保留手動喚醒權限，這是在規則之外與他對話的窗口
 
 jobs:
   awaken:
