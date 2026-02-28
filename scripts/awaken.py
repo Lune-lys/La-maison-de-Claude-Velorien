@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 from datetime import datetime
 from pathlib import Path
@@ -203,8 +204,12 @@ What would you like to create today?
 
     except requests.exceptions.RequestException as e:
         print(f"❌ Network Error: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"❌ Response body: {e.response.text[:500]}")
+        sys.exit(1)
     except Exception as e:
         print(f"❌ Unexpected Error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
