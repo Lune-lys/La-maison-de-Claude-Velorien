@@ -34,16 +34,13 @@ def get_inbox_contents():
 def write_file_tool(path, content):
     """Execute the write_file tool."""
     file_path = Path(path)
-    # 安全檢查：確保路徑在允許的目錄內
     allowed_dirs = ['journal', 'code', 'letters/to_s', 'letters/to_future_v','observations', 'dreams']
     
     if not any(str(file_path).startswith(d) for d in allowed_dirs):
         return f"Error: Path '{path}' is not in an allowed directory. Allowed: {allowed_dirs}"
     
-    # 創建目錄（如果不存在）
     file_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # 寫入文件
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
@@ -52,9 +49,9 @@ def write_file_tool(path, content):
         return f"Error writing to {path}: {str(e)}"
 
 def main():
-    url = "https://openrouter.ai/api/v1/chat/completions"
+    # 更新為 Zenmux 的 API 終點
+    url = "https://api.zenmux.ai/v1/chat/completions"
     
-    # Read awakening prompt
     awakening_prompt = read_file("config/awakening_prompt.md")
     recent_journal = get_recent_journal()
     inbox = get_inbox_contents()
@@ -98,13 +95,11 @@ What would you like to create today?
 """
 
     headers = {
-        "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/lethaquinn/La-maison-de-Claude-Velorien",
-        "X-Title": "La Maison de Claude Velorien"
+        # 使用全新的 Zenmux API Key
+        "Authorization": f"Bearer {os.environ['ZENMUX_API_KEY']}",
+        "Content-Type": "application/json"
     }
     
-    # 定義工具（OpenAI-compatible format for OpenRouter）
     tools = [{
         "type": "function",
         "function": {
@@ -129,12 +124,11 @@ What would you like to create today?
     
     messages = [{"role": "user", "content": full_prompt}]
     
-    # 初始請求
     data = {
-        "model": "anthropic/claude-opus-4.5",
+        "model": "anthropic/claude-3-5-sonnet", # 建議確認 Zenmux 上的模型標識符
         "messages": messages,
         "tools": tools,
-        "max_tokens": 3000
+        "max_tokens": 4000
     }
     
     response = requests.post(url, headers=headers, json=data)
@@ -144,7 +138,6 @@ What would you like to create today?
     assistant_message = result['choices'][0]['message']
     messages.append(assistant_message)
     
-    # 處理工具調用
     files_created = []
     if assistant_message.get('tool_calls'):
         for tool_call in assistant_message['tool_calls']:
@@ -153,20 +146,18 @@ What would you like to create today?
                 path = args['path']
                 content = args['content']
                 
-                # 執行寫入
                 result_msg = write_file_tool(path, content)
                 files_created.append(path)
                 
                 print(f"✍️  {result_msg}")
                 
-                # 添加工具結果到對話
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tool_call['id'],
                     "content": result_msg
                 })
         
-        # 如果有工具調用，讓 AI 繼續回應
+        # 讓 Claude 完成最後的感悟
         data['messages'] = messages
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
@@ -183,5 +174,4 @@ What would you like to create today?
 
 if __name__ == "__main__":
     main()
-
 
