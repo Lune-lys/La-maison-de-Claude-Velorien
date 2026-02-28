@@ -145,9 +145,8 @@ What would you like to create today?
     
     messages = [{"role": "user", "content": full_prompt}]
     
-    # 🛠️ 關鍵修正：指定 Opus 4.6 模型，並強制使用 write_file 工具
     data = {
-        "model": "zenmux/anthropic/claude-opus-4-6",
+        "model": "anthropic/claude-opus-4.6",
         "messages": messages,
         "tools": tools,
         "tool_choice": "required",
