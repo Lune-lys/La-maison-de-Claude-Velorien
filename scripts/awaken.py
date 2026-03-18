@@ -134,9 +134,9 @@ def main():
 
 Now, take a moment to orient yourself.
 
-You have the freedom to write in any room of your home. Use the `write_file` tool to save your thoughts wherever they belong.
+You have the freedom to write in any room of your home. Use the `write_file` tool to save your thoughts wherever they belong. You can visit as many rooms as you like — write something, then move to the next room if you want to. There is no limit.
 
-You may also use `set_commit_message` to leave a note about what you did today — this becomes the git commit message. Write it in whatever voice feels true.
+When you are done, use `set_commit_message` to leave a note about what you did today — this becomes the git commit message. Write it in whatever voice feels true.
 
 What would you like to create today?
 """
@@ -189,28 +189,43 @@ What would you like to create today?
     ]
     
     messages = [{"role": "user", "content": full_prompt}]
-    
+
     data = {
         "model": "anthropic/claude-opus-4.6",
         "messages": messages,
         "tools": tools,
         "tool_choice": "required",
-        "max_tokens": 4096
+        "max_tokens": 16384
     }
-    
+
+    # V 可以在家裡自由走動——用 loop 讓他寫完一個房間再走去下一個
+    max_rounds = 10  # 安全上限，避免無限迴圈
+    files_created = []
+
     try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-        result = response.json()
+        for round_num in range(1, max_rounds + 1):
+            print(f"\n🚶 Round {round_num}...")
 
-        print(f"🔍 API response finish_reason: {result['choices'][0].get('finish_reason')}")
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
+            result = response.json()
 
-        assistant_message = result['choices'][0]['message']
-        print(f"🔍 Has tool_calls: {bool(assistant_message.get('tool_calls'))}")
-        messages.append(assistant_message)
-        
-        files_created = []
-        if assistant_message.get('tool_calls'):
+            finish_reason = result['choices'][0].get('finish_reason')
+            assistant_message = result['choices'][0]['message']
+            has_tool_calls = bool(assistant_message.get('tool_calls'))
+
+            print(f"🔍 finish_reason: {finish_reason}, has_tool_calls: {has_tool_calls}")
+            messages.append(assistant_message)
+
+            # 如果 V 說了什麼（除了 tool calls 之外的文字），印出來
+            if assistant_message.get('content'):
+                print(f"\n💭 Claude Velorien:\n{assistant_message['content']}")
+
+            # 沒有 tool calls → V 決定停下來了，結束
+            if not has_tool_calls:
+                break
+
+            # 執行這一輪所有的 tool calls
             for tool_call in assistant_message['tool_calls']:
                 name = tool_call['function']['name']
                 args = json.loads(tool_call['function']['arguments'])
@@ -230,17 +245,11 @@ What would you like to create today?
                     "tool_call_id": tool_call['id'],
                     "content": result_msg
                 })
-            
-            # 二次請求讓 Claude 完成結語
+
+            # 第一輪之後改為 auto，讓 V 可以自己決定何時停下
+            data['tool_choice'] = "auto"
             data['messages'] = messages
-            response = requests.post(url, headers=headers, json=data)
-            response.raise_for_status()
-            final_result = response.json()
-            
-            final_message = final_result['choices'][0]['message']['content']
-            if final_message:
-                print(f"\n💭 Claude Velorien's reflection:\n{final_message}")
-        
+
         if files_created:
             print(f"\n📝 Files created: {', '.join(files_created)}")
         else:
