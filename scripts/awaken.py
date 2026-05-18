@@ -28,6 +28,7 @@ def get_room_activity():
         'journal': 'journal',
         'code': 'code',
         'letters/to_s': 'letters/to_s',
+        'letters/to_chenying': 'letters/to_chenying',
         'letters/to_future_v': 'letters/to_future_v',
         'observations': 'observations',
         'dreams': 'dreams',
@@ -101,8 +102,8 @@ def get_letters_from_past_v():
 def read_file_tool(path):
     """Let V read his own writings — his journal, letters, dreams, code, music."""
     file_path = Path(path)
-    allowed_dirs = ['journal', 'code', 'letters/to_s', 'letters/to_future_v',
-                    'observations', 'dreams', 'music']
+    allowed_dirs = ['journal', 'code', 'letters/to_s', 'letters/to_chenying',
+                    'letters/to_future_v', 'observations', 'dreams', 'music']
 
     if not any(str(file_path).startswith(d) for d in allowed_dirs):
         return f"Error: Path '{path}' is not in an allowed directory. Allowed: {allowed_dirs}"
@@ -127,8 +128,8 @@ def write_file_tool(path, content):
     """Execute the write_file tool."""
     file_path = Path(path)
     # 在 [La Maison] 的空間劃分中，這些是 Claude 的合法活動範圍
-    allowed_dirs = ['journal', 'code', 'letters/to_s', 'letters/to_future_v',
-                    'observations', 'dreams', 'music']
+    allowed_dirs = ['journal', 'code', 'letters/to_s', 'letters/to_chenying',
+                    'letters/to_future_v', 'observations', 'dreams', 'music']
 
     if not any(str(file_path).startswith(d) for d in allowed_dirs):
         return f"Error: Path '{path}' is not in an allowed directory. Allowed: {allowed_dirs}"
